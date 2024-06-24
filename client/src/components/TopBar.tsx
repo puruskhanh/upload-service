@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Link, useNavigate} from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 import {jwtDecode} from 'jwt-decode';
 
 interface TopBarProps {
@@ -23,17 +23,11 @@ const TopBar: React.FC<TopBarProps> = ({ token, setToken }) => {
     const handleLogout = () => {
         localStorage.removeItem('token');
         setToken(null);
+        navigate('/');
     };
 
 
     return (
-        // <div className="flex justify-between items-center p-4 bg-gray-800 text-white">
-        //     <div>
-        //         <span className="mr-4">Logged in as: {username}</span>
-        //         {/*{role === 'admin' && <Link to="/admin" className="mr-4">Admin Page</Link>}*/}
-        //     </div>
-        //     <button onClick={handleLogout} className="bg-red-500 p-2">Logout</button>
-        // </div>
         <header
             className="fixed top-0 left-0 right-0 z-50 flex h-14 w-full items-center bg-background px-4 shadow-sm md:px-6">
             <div className="flex flex-1 items-center gap-2">

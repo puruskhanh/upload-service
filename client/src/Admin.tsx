@@ -2,6 +2,7 @@ import React, {useState, useEffect} from 'react';
 import {jwtDecode} from "jwt-decode";
 import {TokenPayload} from "./App.tsx";
 import {useNavigate} from "react-router-dom";
+import {toast} from "react-toastify";
 
 interface AdminProps {
     token: string;
@@ -48,13 +49,32 @@ const Admin: React.FC<AdminProps> = ({token}) => {
         }
     };
 
-    const handleDeleteUser = async (id: number) => {
-        await fetch(`/api/auth/users/${id}`, {
+    const handleDeleteUser = async (id: number, username: string) => {
+        let response = await fetch(import.meta.env.VITE_SERVER_URL + `/api/auth/users/${id}`, {
             method: 'DELETE',
             headers: {'Authorization': `Bearer ${token}`}
         });
+        const data = await response.json();
+        if (response.status !== 200) {
+            toast.error(data.message);
+            return;
+        }
+        toast('Deleted '+username);
         // @ts-ignore
         setUsers(users.filter(user => user.id !== id));
+    };
+
+    const handleResetPassword = async (id: number, username: string) => {
+        let response = await fetch(import.meta.env.VITE_SERVER_URL + `/api/auth/reset-password/${id}`, {
+            method: 'POST',
+            headers: {'Authorization': `Bearer ${token}`}
+        });
+        const data = await response.json();
+        if (response.status !== 200) {
+            toast.error(data.message);
+            return;
+        }
+        toast('Password reset for '+username);
     };
 
     return (
@@ -85,10 +105,11 @@ const Admin: React.FC<AdminProps> = ({token}) => {
                                 className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{user.id}</th>
                             <td className="px-6 py-4">{user.username}</td>
                             <td className="px-6 py-4">
-                                <button onClick={() => handleDeleteUser(user.id)}
+                                <button onClick={() => handleDeleteUser(user.id, user.username)}
                                         className="bg-red-500 text-white p-2">Delete
                                 </button>
-                                <button className="bg-blue-500 text-white p-2">Edit</button>
+                                <button onClick={() => handleResetPassword(user.id, user.username)}
+                                    className="bg-blue-500 text-white p-2 ml-2">Reset password</button>
                             </td>
                         </tr>
                     ))}

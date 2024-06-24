@@ -91,14 +91,15 @@ const deleteUser = async (req: Request, res: Response) => {
         return res.status(401).json({message: 'Unauthorized'});
     }
     // @ts-ignore
-    if (req.user.role !== 'admin') {
+    let user = await User.findByPk(req.user.userId);
+    if (user.role !== 'admin') {
         return res.status(403).json({message: 'Access denied'});
     }
 
     const {id} = req.params;
     try {
         await User.destroy({where: {id}});
-        res.json({message: 'User deleted'});
+        res.status(200).json({message: 'User deleted'});
     } catch (error) {
         res.status(500).json({message: 'Error deleting user', error});
     }
@@ -110,21 +111,21 @@ const resetPassword = async (req: Request, res: Response) => {
         return res.status(401).json({message: 'Unauthorized'});
     }
     // @ts-ignore
-    if (req.user.role !== 'admin') {
+    let user = await User.findByPk(req.user.userId);
+    if (user.role !== 'admin') {
         return res.status(403).json({message: 'Access denied'});
     }
 
     const {id} = req.params;
-    const {password} = req.body;
     try {
         const user = await User.findByPk(id);
         if (!user) {
             return res.status(404).json({message: 'User not found'});
         }
-        user.password = password;
+        user.password = 'password';
         user.passwordChanged = false;
         await user.save();
-        res.json({message: 'Password reset successfully'});
+        res.status(200).json({message: 'Password reset successfully'});
     } catch (error) {
         res.status(500).json({message: 'Error resetting password', error});
     }
