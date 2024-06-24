@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs" // Use commonjs for compatibility with ts-node and nodemon
+  },
+  "include": ["server/**/*.ts"]
+}

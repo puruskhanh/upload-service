@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Service</title>
+    <style>
+        /* Add some basic styling */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px 0;
+            display: block;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <h1>Upload Service</h1>
+    <div id="auth">
+        <h2>Register</h2>
+        <form id="register-form">
+            <input type="text" id="register-username" placeholder="Username">
+            <input type="password" id="register-password" placeholder="Password">
+            <button type="submit">Register</button>
+        </form>
+
+        <h2>Login</h2>
+        <form id="login-form">
+            <input type="text" id="login-username" placeholder="Username">
+            <input type="password" id="login-password" placeholder="Password">
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <div id="upload-section" style="display: none;">
+        <h2>Upload File</h2>
+        <form id="upload-form">
+            <input type="file" id="file-input">
+            <button type="submit">Upload</button>
+        </form>
+
+        <h2>Your Uploads</h2>
+        <ul id="uploads-list"></ul>
+    </div>
+</div>
+
+<script>
+  // Add JavaScript to handle form submissions and API requests
+  const token = localStorage.getItem('token');
+
+  document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('register-username').value;
+    const password = document.getElementById('register-password').value;
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    alert(data.message);
+  });
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('login-username').value;
+    const password = document.getElementById('login-password').value;
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+      document.getElementById('auth').style.display = 'none';
+      document.getElementById('upload-section').style.display = 'block';
+      loadUploads();
+    } else {
+      alert(data.message);
+    }
+  });
+
+  document.getElementById('upload-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fileInput = document.getElementById('file-input');
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      body: formData
+    });
+    const data = await res.json();
+    alert(data.message);
+    loadUploads();
+  });
+
+  async function loadUploads() {
+    const res = await fetch('/api/uploads', {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    });
+    const uploads = await res.json();
+    const uploadsList = document.getElementById('uploads-list');
+    uploadsList.innerHTML = '';
+    uploads.forEach(upload => {
+      const li = document.createElement('li');
+      li.textContent = upload.originalName;
+
+      const openButton = document.createElement('button');
+      openButton.textContent = 'Open';
+      openButton.addEventListener('click', () => {
+        window.open(`/uploads/${upload.filePath}`, '_blank');
+      });
+
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete';
+      deleteButton.addEventListener('click', async () => {
+        await fetch(`/api/uploads/${upload.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        loadUploads();
+      });
+
+      li.appendChild(openButton);
+      li.appendChild(deleteButton);
+      uploadsList.appendChild(li);
+    });
+  }
+
+  if (token) {
+    document.getElementById('auth').style.display = 'none';
+    document.getElementById('upload-section').style.display = 'block';
+    loadUploads();
+  }
+</script>
+</body>
+</html>
