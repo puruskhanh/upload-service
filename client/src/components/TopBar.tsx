@@ -29,7 +29,7 @@ const TopBar: React.FC<TopBarProps> = ({ token, setToken }) => {
 
     return (
         <header
-            className="fixed top-0 left-0 right-0 z-50 flex h-14 w-full items-center bg-background px-4 shadow-sm md:px-6">
+            className="fixed top-0 left-0 right-0 z-50 flex h-14 w-full items-center bg-white px-4 shadow-sm md:px-6">
             <div className="flex flex-1 items-center gap-2">
                 <div className="flex items-center gap-2 text-sm font-medium">
                     <svg xmlns="http://www.w3.org/2000/svg" className={"h-6 w-6 text-primary-foreground"}

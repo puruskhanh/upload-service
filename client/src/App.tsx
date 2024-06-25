@@ -42,7 +42,7 @@ export default function App() {
     }, [token]);
 
     return (
-        <div className="container mx-auto p-4 w-full">
+        <div className="container mx-auto p-4 min-w-[80%]">
             <h1 className="text-3xl font-bold mb-4">Upload Service</h1>
             <HashRouter>
                 {token && <TopBar token={token} setToken={setToken}/>}

@@ -12,6 +12,9 @@
   },
   "dependencies": {
     "@types/react-toastify": "^4.1.0",
+    "datatables.net-bm": "^2.0.8",
+    "datatables.net-dt": "^2.0.8",
+    "datatables.net-scroller-dt": "^2.4.3",
     "dropzone": "^6.0.0-beta.2",
     "jwt-decode": "^4.0.0",
     "react": "^18.2.0",
@@ -20,6 +23,7 @@
     "react-toastify": "^10.0.5"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.13",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@typescript-eslint/eslint-plugin": "^7.2.0",

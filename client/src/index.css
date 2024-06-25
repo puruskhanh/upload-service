@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .revert-tailwind{
+    all: initial;
+  }
+
+  .revert-tailwind > * {
+    all: revert;
+  }
+}
+
 
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
