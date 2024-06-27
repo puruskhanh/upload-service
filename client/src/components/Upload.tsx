@@ -6,6 +6,7 @@ import ModalEditUpload from "./ModalEditUpload.tsx";
 import DataTable from 'datatables.net-dt';
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net-scroller-dt';
+import ModalLoading from "./ModalLoading.tsx";
 
 // import 'datatables.net-responsive-dt';
 
@@ -106,6 +107,9 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
         if (!files.length) {
             return;
         }
+
+        setModals([<ModalLoading key="loading" message="Uploading file..."/>])
+
         const formData = new FormData();
         formData.append('file', files[0]);
         if (useCustomPath && customPathRef.current?.value?.trim()) {
@@ -128,10 +132,12 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
                 }
                 toast.success('File uploaded successfully');
                 loadUploads();
+                setModals([]);
             })
             .catch((error) => {
                 console.error('Upload file error:', error);
                 toast.error('Failed to upload file');
+                setModals([]);
             });
     }
 
@@ -163,7 +169,7 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
 
                 </div>
 
-                <div>
+                <div className="w-full">
                     <h2 className="text-2xl mb-4">Your Uploads</h2>
                     <table id="uploads" className="table-auto w-full" ref={tableRef}>
                         <thead>
@@ -228,7 +234,6 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
                     </table>
                 </div>
             </div>
-
             {
                 modals
             }

@@ -60,10 +60,11 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
+  padding: 0;
   place-items: center;
-place-content: center;
+  place-content: center;
   min-height: 100vh;
+  min-width: 100vw;
 }
 
 h1 {
