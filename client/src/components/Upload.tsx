@@ -54,6 +54,24 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
             }
             const data = await res.json();
             setUploads(data);
+
+            if (tableRef.current) {
+                setTimeout(() => {
+                    // @ts-ignore
+                    setTable((prevState) => {
+                        if (prevState) {
+                            prevState.destroy();
+                        }
+                        return new DataTable("#uploads", {
+                            scrollY: '30vh',
+                            scrollCollapse: true,
+                            scroller: true,
+                            order: [[2, 'desc']]
+                        });
+                    });
+                }, 1000);
+            }
+
         } catch (error) {
             console.error('Load uploads error:', error);
             toast.error('Failed to load uploads');
@@ -62,22 +80,6 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
 
     useEffect(() => {
         loadUploads();
-        if (tableRef.current) {
-            setTimeout(() => {
-                // @ts-ignore
-                setTable((prevState) => {
-                    if (prevState) {
-                        prevState.destroy();
-                    }
-                    return new DataTable("#uploads", {
-                        scrollY: '25vh',
-                        scrollCollapse: true,
-                        scroller: true,
-                        order: [[2, 'desc']]
-                    });
-                });
-            }, 100);
-        }
     }, []);
 
     const handleCopyLink = (link: string) => {
