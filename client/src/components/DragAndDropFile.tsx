@@ -80,9 +80,7 @@ export default function DragAndDropFile({onSubmit}: DragAndDropProps) {
                                         fileName ?
                                             <p className="text-md text-gray-600 dark:text-gray-300">{fileName}</p>
                                             :
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">Single file in any
-                                                type, if
-                                                it is a zip file that contains the index.html file</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">Single file in any type</p>
                                     }</>
                         }
                     </div>

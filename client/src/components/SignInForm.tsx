@@ -13,7 +13,7 @@ const SignInForm: React.FC<SignInFormProps> = ({setToken}) => {
         try {
             // Simulate API call for demonstration
             // Replace with actual fetch call to your server
-            const response = await fetch(import.meta.env.VITE_SERVER_URL + '/api/auth/login', {
+            const response = await fetch((import.meta.env.VITE_SERVER_URL || "") + '/api/auth/login', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({username, password}),

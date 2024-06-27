@@ -6,6 +6,7 @@ import ModalEditUpload from "./ModalEditUpload.tsx";
 import DataTable from 'datatables.net-dt';
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net-scroller-dt';
+
 // import 'datatables.net-responsive-dt';
 
 interface UploadProps {
@@ -16,13 +17,16 @@ interface UploadProps {
 const Upload: React.FC<UploadProps> = ({token, setToken}) => {
     const [uploads, setUploads] = useState<any[]>([]);
     const [modals, setModals] = useState<any[]>([]);
+    const [useCustomPath, setUseCustomPath] = useState<boolean>(false);
+    const [isWebSite, setIsWebSite] = useState<boolean>(false);
     const [_, setTable] = useState<DataTable<any>>(null);
     const tableRef = React.createRef<HTMLTableElement>();
+    const customPathRef = React.createRef<HTMLInputElement>();
 
     useEffect(() => {
         const fetchUserName = async () => {
             try {
-                const response = await fetch(import.meta.env.VITE_SERVER_URL + '/api/auth/user', {
+                const response = await fetch((import.meta.env.VITE_SERVER_URL || "") + '/api/auth/user', {
                     headers: {'Authorization': `Bearer ${token}`}
                 });
                 if (!response.ok) {
@@ -41,7 +45,7 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
 
     const loadUploads = async () => {
         try {
-            const res = await fetch(import.meta.env.VITE_SERVER_URL + '/api/uploads', {
+            const res = await fetch((import.meta.env.VITE_SERVER_URL || "") + '/api/uploads', {
                 headers: {'Authorization': `Bearer ${token}`}
             });
             if (!res.ok) {
@@ -68,7 +72,7 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
                         scrollY: '25vh',
                         scrollCollapse: true,
                         scroller: true,
-                        order: [[1, 'desc']]
+                        order: [[2, 'desc']]
                     });
                 });
             }, 100);
@@ -83,7 +87,7 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
 
     const handleDelete = async (id: number) => {
         try {
-            const res = await fetch(import.meta.env.VITE_SERVER_URL + `/api/uploads/${id}`, {
+            const res = await fetch((import.meta.env.VITE_SERVER_URL || "") + `/api/uploads/${id}`, {
                 method: 'DELETE',
                 headers: {'Authorization': `Bearer ${token}`}
             });
@@ -104,12 +108,21 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
         }
         const formData = new FormData();
         formData.append('file', files[0]);
-        fetch(import.meta.env.VITE_SERVER_URL + '/api/upload', {
+        if (useCustomPath && customPathRef.current?.value?.trim()) {
+            formData.append('customPath', customPathRef.current.value);
+        }
+        if (isWebSite) {
+            formData.append('isWebSite', 'true');
+        }
+        fetch((import.meta.env.VITE_SERVER_URL || "") + '/api/upload', {
             method: 'POST',
             headers: {'Authorization': `Bearer ${token}`},
             body: formData
         })
             .then((res) => {
+                if (useCustomPath) {
+                    customPathRef.current.value = '';
+                }
                 if (!res.ok) {
                     throw new Error('Failed to upload file');
                 }
@@ -124,17 +137,39 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
 
     return (
         <>
-            <div>
-                <h2 className="text-2xl mb-4 min-w-[50vw]">Upload File</h2>
-                <DragAndDropFile onSubmit={submitFile}/>
+            <div className="w-full">
 
-                <h2 className="text-2xl mb-4">Your Uploads</h2>
+                <div className="mb-10 border-2 p-2 rounded-xl drop-shadow bg-white">
+                    <h2 className="text-2xl mb-4 min-w-[50vw]">Upload File</h2>
+                    <DragAndDropFile onSubmit={submitFile}/>
 
-                <div className={""}>
+                    <div className="p-2 mt-2">
+                        <label className="h-6 relative inline-block">
+                            <input type="checkbox"
+                                   checked={isWebSite}
+                                   onChange={() => setIsWebSite(!isWebSite)}/>
+                            <span>Is website (Accept zip file with has index.html in root)</span></label>
+                    </div>
+                    <div className="p-2 flex flex-row flex-grow justify-center items-center">
+
+                        <label className="h-6 relative inline-block">
+                            <input type="checkbox"
+                                   checked={useCustomPath}
+                                   onChange={() => setUseCustomPath(!useCustomPath)}/>
+                            <span>Use custom path</span></label>
+                        <input ref={customPathRef} type="text" className="border p-2 ml-2 flex-1 rounded-xl"
+                               disabled={!useCustomPath}/>
+                    </div>
+
+                </div>
+
+                <div>
+                    <h2 className="text-2xl mb-4">Your Uploads</h2>
                     <table id="uploads" className="table-auto w-full" ref={tableRef}>
                         <thead>
                         <tr>
                             <th className="border px-4 py-2">File Name</th>
+                            <th className="border px-4 py-2">Custom Path</th>
                             <th className="border px-4 py-2">Upload date</th>
                             <th className="border px-4 py-2">Actions</th>
                         </tr>
@@ -143,8 +178,15 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
                         {uploads.map((upload) => (
                             <tr key={upload.id} className="">
                                 <td className="border px-4 py-2">
-                                    <a href={import.meta.env.VITE_SERVER_URL + `/uploads/${upload.filePath}`}
+                                    <a href={(import.meta.env.VITE_SERVER_URL || "") + `/uploads/${upload.filePath}`}
                                        target={"_blank"}>{upload.originalName}</a>
+                                </td>
+                                <td className="border px-4 py-2">
+                                    {
+                                        upload.customPath &&
+                                      <a href={(import.meta.env.VITE_SERVER_URL || "") + `/uploads/${upload.customPath}`}
+                                         target={"_blank"}>{upload.customPath}</a>
+                                    }
                                 </td>
                                 <td className="border px-4 py-2">{new Date(upload.createdAt).toLocaleString()}</td>
                                 <td className="border px-4 py-2 flex flex-row gap-1">
@@ -160,12 +202,15 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
                                             const modal = <ModalEditUpload
                                                 key={upload.id}
                                                 id={upload.id}
+                                                isWebSite={upload.isWebSite}
+                                                oldCustomPath={upload.customPath}
                                                 name={upload.originalName}
                                                 token={token}
                                                 onClose={() => {
                                                     loadUploads();
                                                     setModals([]);
                                                 }}
+                                                onUpdated={loadUploads}
                                             />;
                                             setModals([modal]);
                                         }}>
@@ -180,13 +225,6 @@ const Upload: React.FC<UploadProps> = ({token, setToken}) => {
                             </tr>
                         ))}
                         </tbody>
-                        <tfoot>
-                        <tr>
-                            <th className="border px-4 py-2">File Name</th>
-                            <th className="border px-4 py-2">Upload date</th>
-                            <th className="border px-4 py-2">Actions</th>
-                        </tr>
-                        </tfoot>
                     </table>
                 </div>
             </div>

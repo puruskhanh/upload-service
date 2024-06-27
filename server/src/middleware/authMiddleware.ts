@@ -13,6 +13,7 @@ export const authenticateJWT = async (req: Request, res: Response, next: NextFun
         if (!user) {
             return res.status(401).json({ message: 'Token is not valid' });
         }
+        // @ts-ignore
         req.user = { userId: user.id };
         next();
     } catch (err) {

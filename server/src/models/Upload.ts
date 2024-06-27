@@ -7,6 +7,8 @@ class Upload extends Model {
     public userId!: number;
     public filePath!: string;
     public originalName!: string;
+    public customPath!: string | null;
+    public isWebSite!: boolean;
 }
 
 Upload.init({
@@ -23,9 +25,19 @@ Upload.init({
         type: DataTypes.STRING,
         allowNull: false,
     },
+    customPath: { // Add this section
+        type: new DataTypes.STRING(128),
+        allowNull: true,
+        unique: true,
+    },
     originalName: {
         type: DataTypes.STRING,
         allowNull: false,
+    },
+    isWebSite: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
     },
 }, {
     sequelize,

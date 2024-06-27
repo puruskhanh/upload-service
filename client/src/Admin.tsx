@@ -19,7 +19,7 @@ const Admin: React.FC<AdminProps> = ({token}) => {
         }
 
         const fetchUsers = async () => {
-            const res = await fetch(import.meta.env.VITE_SERVER_URL + '/api/auth/users', {
+            const res = await fetch((import.meta.env.VITE_SERVER_URL || "") + '/api/auth/users', {
                 headers: {'Authorization': `Bearer ${token}`}
             });
             const data = await res.json();
@@ -34,7 +34,7 @@ const Admin: React.FC<AdminProps> = ({token}) => {
         e.preventDefault();
         const username = prompt('Enter username');
         if (username) {
-            const res = await fetch(import.meta.env.VITE_SERVER_URL + '/api/auth/create-user', {
+            const res = await fetch((import.meta.env.VITE_SERVER_URL || "") + '/api/auth/create-user', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -50,7 +50,7 @@ const Admin: React.FC<AdminProps> = ({token}) => {
     };
 
     const handleDeleteUser = async (id: number, username: string) => {
-        let response = await fetch(import.meta.env.VITE_SERVER_URL + `/api/auth/users/${id}`, {
+        let response = await fetch((import.meta.env.VITE_SERVER_URL || "") + `/api/auth/users/${id}`, {
             method: 'DELETE',
             headers: {'Authorization': `Bearer ${token}`}
         });
@@ -65,7 +65,7 @@ const Admin: React.FC<AdminProps> = ({token}) => {
     };
 
     const handleResetPassword = async (id: number, username: string) => {
-        let response = await fetch(import.meta.env.VITE_SERVER_URL + `/api/auth/reset-password/${id}`, {
+        let response = await fetch((import.meta.env.VITE_SERVER_URL || "") + `/api/auth/reset-password/${id}`, {
             method: 'POST',
             headers: {'Authorization': `Bearer ${token}`}
         });

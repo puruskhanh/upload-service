@@ -15,7 +15,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({setToken}) => {
             toast.error('Passwords do not match');
             return;
         }
-        const res = await fetch(import.meta.env.VITE_SERVER_URL + '/api/auth/change-password', {
+        const res = await fetch((import.meta.env.VITE_SERVER_URL || "") + '/api/auth/change-password', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
