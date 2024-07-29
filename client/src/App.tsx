@@ -8,6 +8,7 @@ import ChangePassword from "./components/ChangePassword.tsx";
 import {HashRouter, Route, Routes} from "react-router-dom";
 import Admin from "./Admin.tsx";
 import TopBar from "./components/TopBar.tsx";
+import {TokenModal} from "./components/TokenModal.tsx";
 
 export interface TokenPayload {
     userId: number;
@@ -20,6 +21,7 @@ export default function App() {
     const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
     const [role, setRole] = useState<string | null>();
     const [firstLogin, setFirstLogin] = useState<boolean>(false);
+    const [modals, setModals] = useState<any>([]);
 
     useEffect(() => {
         setToken(localStorage.getItem('token'));
@@ -41,11 +43,15 @@ export default function App() {
         }
     }, [token]);
 
+    const showTokenModal = () => {
+        setModals([<TokenModal key={Math.random()} token={token}/>]);
+    }
+
     return (
         <div className="container mx-auto p-4 min-w-[90%]">
             <h1 className="text-3xl font-bold mb-4 w-full text-center">Upload Service</h1>
             <HashRouter>
-                {token && <TopBar token={token} setToken={setToken}/>}
+                {token && <TopBar token={token} setToken={setToken} showTokenModal={showTokenModal}/>}
                 <Routes>
                     <Route path={'/'} element={
                         <>
@@ -62,7 +68,7 @@ export default function App() {
 
                             {
                                 (token && !firstLogin && role === 'admin') &&
-                              <Upload token={token} setToken={setToken}/>
+                                <Upload token={token} setToken={setToken}/>
                             }
                         </>
                     }>
@@ -72,6 +78,7 @@ export default function App() {
                 </Routes>
 
             </HashRouter>
+            {modals}
             <ToastContainer/>
         </div>
     );

@@ -5,6 +5,7 @@ import path from 'path';
 import sequelize from './config/database';
 import authRoutes from './routes/authRoutes';
 import uploadRoutes from './routes/uploadRoutes';
+import tokenRoutes from './routes/tokenRoutes';
 // @ts-ignore
 import fs from 'fs';
 import User from "./models/User";
@@ -76,6 +77,7 @@ app.use(express.static(path.join(dirname, "..", 'client', 'build')));
 // Handle API routes
 app.use('/api/auth', authRoutes);
 app.use('/api', uploadRoutes);
+app.use('/api/token', tokenRoutes);
 
 app.use(express.static(path.join(dirname,"..", 'client', 'dist')));
 

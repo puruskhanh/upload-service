@@ -4,6 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import {v4 as uuidv4} from 'uuid';
 import unzipper from 'unzipper';
+import jwt from "jsonwebtoken";
+import {PermissionLevel} from "../models/Token";
 
 
 let dirname;
@@ -11,6 +13,83 @@ if (process.env.NODE_ENV === 'development') {
     dirname = path.resolve(path.dirname(''));
 } else {
     dirname = __dirname;
+}
+
+async function handleUploadFile(customPath?: string, file?: Express.Multer.File, res?: Response<any, Record<string, any>>, fileExtension?: string, isWebSite?:boolean, userId?:string, overwrite?:boolean) {
+    let oldUpload;
+    if (customPath) {
+        const uploadWithCustomPath = await Upload.findOne({where: {customPath}});
+        if (uploadWithCustomPath && !overwrite) {
+            fs.unlinkSync(file.path);
+            return res.status(400).json({message: 'Custom path already exists'});
+        }
+        oldUpload = uploadWithCustomPath;
+    }
+
+    if (fileExtension === '.zip' && isWebSite) {
+        const uploadId = uuidv4();
+        const extractPath = path.join(dirname, "..", 'uploads', uploadId);
+
+        fs.mkdirSync(extractPath, {recursive: true});
+
+        // Extract the zip file
+        fs.createReadStream(file.path)
+          .pipe(unzipper.Extract({path: extractPath}))
+          .promise()
+          .then(async () => {
+              if(oldUpload && overwrite) {
+                  fs.rmdirSync(path.join(dirname, "..", 'uploads', oldUpload.dataValues.filePath), {recursive: true});
+                  oldUpload.filePath = uploadId;
+                  oldUpload.originalName = file.originalname;
+                  oldUpload.customPath = customPath || null;
+                  oldUpload.isWebSite = true;
+                  await oldUpload.save();
+              }
+              else {
+                  oldUpload = await Upload.create({
+                      // @ts-ignore
+                      userId,
+                      filePath: uploadId,
+                      originalName: file.originalname,
+                      customPath: customPath || null,
+                      isWebSite: true,
+                  });
+              }
+
+              fs.unlinkSync(file.path); // Remove the uploaded zip file
+
+              res.status(201).json({message: 'Zip file uploaded and extracted', file: oldUpload});
+          })
+          .catch((err: Error) => {
+              fs.rmdirSync(extractPath, {recursive: true});
+              res.status(500).json({message: 'Error extracting zip file', error: err.message});
+          });
+    } else {
+       if(oldUpload && overwrite) {
+            const oldFilePath = path.join(dirname, "..", 'uploads', oldUpload.dataValues.filePath);
+            fs.unlinkSync(oldFilePath);
+            fs.renameSync(file.path, oldFilePath);
+            oldUpload.originalName = file.originalname;
+            oldUpload.customPath = customPath || null;
+            await oldUpload.save();
+       }
+       else {
+           const fileName = `${uuidv4()}${fileExtension}`;
+           const filePath = path.join(dirname, "..", 'uploads', fileName);
+
+           fs.renameSync(file.path, filePath);
+
+           oldUpload = await Upload.create({
+               // @ts-ignore
+               userId,
+               filePath: fileName,
+               customPath: customPath || null,
+               originalName: file.originalname,
+           });
+       }
+
+        res.status(201).json({message: 'File uploaded', file: oldUpload.dataValues});
+    }
 }
 
 const uploadFile = async (req: Request, res: Response) => {
@@ -22,59 +101,10 @@ const uploadFile = async (req: Request, res: Response) => {
     const fileExtension = path.extname(file.originalname).toLowerCase();
     const customPath = req.body.customPath;
     const isWebSite = req.body.isWebSite;
+    // @ts-ignore
+    const userId = req.user.userId;
 
-    if (customPath) {
-        const uploadWithCustomPath = await Upload.findOne({where: {customPath}});
-        if (uploadWithCustomPath) {
-            fs.unlinkSync(file.path);
-            return res.status(400).json({message: 'Custom path already exists'});
-        }
-    }
-
-    if (fileExtension === '.zip' && isWebSite) {
-        const uploadId = uuidv4();
-        const extractPath = path.join(dirname, "..", 'uploads', uploadId);
-
-        fs.mkdirSync(extractPath, {recursive: true});
-
-        // Extract the zip file
-        fs.createReadStream(file.path)
-            .pipe(unzipper.Extract({path: extractPath}))
-            .promise()
-            .then(async () => {
-                const upload = await Upload.create({
-                    // @ts-ignore
-                    userId: req.user.userId,
-                    filePath: uploadId,
-                    originalName: file.originalname,
-                    customPath: customPath || null,
-                    isWebSite: true,
-                });
-
-                fs.unlinkSync(file.path); // Remove the uploaded zip file
-
-                res.status(201).json({message: 'Zip file uploaded and extracted', file: upload});
-            })
-            .catch((err: Error) => {
-                fs.rmdirSync(extractPath, {recursive: true});
-                res.status(500).json({message: 'Error extracting zip file', error: err.message});
-            });
-    } else {
-        const fileName = `${uuidv4()}${fileExtension}`;
-        const filePath = path.join(dirname, "..", 'uploads', fileName);
-
-        fs.renameSync(file.path, filePath);
-
-        const upload = await Upload.create({
-            // @ts-ignore
-            userId: req.user.userId,
-            filePath: fileName,
-            customPath: customPath || null,
-            originalName: file.originalname,
-        });
-
-        res.status(201).json({message: 'File uploaded', file: upload.dataValues});
-    }
+    return await handleUploadFile(customPath, file, res, fileExtension, isWebSite, userId);
 };
 
 const getUserUploads = async (req: Request, res: Response) => {
@@ -173,4 +203,36 @@ const updateCustomPath = async (req: Request, res: Response) => {
     res.json({message: 'Custom path updated'});
 }
 
-export {uploadFile, getUserUploads, deleteUpload, updateUpload, updateCustomPath};
+const uploadByToken = async (req: Request, res: Response) => {
+    // @ts-ignore
+    if(!req.user) {
+        return res.status(401).json({message: 'Unauthorized'});
+    }
+    const token = req.headers.authorization.split(' ')[1];
+    const tokenDecoded = jwt.decode(token);
+    if (!tokenDecoded) {
+        return res.status(401).json({message: 'Invalid token'});
+    }
+    let expiresAt = tokenDecoded.expiresAt;
+    if(expiresAt !== 'never') {
+        expiresAt = new Date(expiresAt);
+        if (expiresAt < new Date()) {
+            return res.status(401).json({message: 'Token expired'});
+        }
+    }
+    let permissionLevel = parseInt(tokenDecoded.permissionLevel);
+    if(permissionLevel < PermissionLevel.READ_WRITE){
+        return res.status(403).json({message: 'Forbidden'});
+    }
+    const {file} = req;
+    if (!file) {
+        return res.status(400).json({message: 'No file uploaded'});
+    }
+    const fileExtension = path.extname(file.originalname).toLowerCase();
+    const customPath = req.body.customPath;
+    const isWebSite = req.body.isWebSite;
+    const userId = tokenDecoded.userId;
+    return await handleUploadFile(customPath, file, res, fileExtension, isWebSite, userId, true);
+}
+
+export {uploadFile, getUserUploads, deleteUpload, updateUpload, updateCustomPath, uploadByToken};
